@@ -144,9 +144,8 @@ int do_astar(void)
         seg_put(&aspflag, (char *)&af, r, c);
     }
     if (doer != -1)
-        G_fatal_error(_("bug in A* Search: doer %" PRId64 " heap size %" PRId64
-                        " count %" PRId64),
-                      doer, heap_size, count);
+	G_warning(_("bug in A* Search: doer %" PRId64 " heap size %"
+		       PRId64 " count %" PRId64), doer, heap_size, count);
 
     seg_close(&search_heap);
 
