@@ -1,7 +1,7 @@
 
 cd $(realpath .)
 
-installdir=$PROJECT_ROOT/bin
+installdir=$(realpath $PROJECT_ROOT)/bin
 
 git pull
 
