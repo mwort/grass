@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
     G_add_keyword(_("settings"));
     module->label = _("Changes/reports current mapset.");
     module->description = _("Optionally create new mapset or list available "
-                            "mapsets in given location.");
+                            "mapsets in given project (location).");
 
     opt.mapset = G_define_standard_option(G_OPT_M_MAPSET);
     opt.mapset->required = YES;
@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
 
     G_asprintf(&lock_prog, "%s/etc/lock", G_gisbase());
 
-    sprintf(path, "%s/.gislock", mapset_new_path);
+    snprintf(path, sizeof(path), "%s/.gislock", mapset_new_path);
     G_debug(2, "%s", path);
 
     ret = G_spawn(lock_prog, lock_prog, path, gis_lock, NULL);
@@ -191,7 +191,7 @@ int main(int argc, char *argv[])
     }
 
     /* Clean temporary directory */
-    sprintf(path, "%s/etc/clean_temp", G_gisbase());
+    snprintf(path, sizeof(path), "%s/etc/clean_temp", G_gisbase());
     G_verbose_message(_("Cleaning up temporary files..."));
     G_spawn(path, "clean_temp", NULL);
 
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
     G_setenv("MAPSET", mapset_new);
 
     /* Remove old lock */
-    sprintf(path, "%s/.gislock", mapset_old_path);
+    snprintf(path, sizeof(path), "%s/.gislock", mapset_old_path);
     remove(path);
 
     G_free(mapset_old_path);

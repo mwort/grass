@@ -22,7 +22,6 @@
 /****************************************************************************/
 
 static void prepare_region_from_maps(expression **, int, int);
-int columns;
 struct Cell_head current_region2;
 
 void setup_region(void)
@@ -294,7 +293,7 @@ static void translate_from_colors(struct map *m, DCELL *rast, CELL *cell,
  * category file.
  *
  * This requires performing sscanf() of the category label
- * and only do it it for new categories. Must maintain
+ * and only do it for new categories. Must maintain
  * some kind of maps of already scanned values.
  *
  * This maps is a hybrid tree, where the data in each node
@@ -725,9 +724,9 @@ void copy_history(const char *dst, int idx)
     Rast_write_history((char *)dst, &hist);
 }
 
+#define RECORD_LEN 80
 void create_history(const char *dst, expression *e)
 {
-    int RECORD_LEN = 80;
     int WIDTH = RECORD_LEN - 12;
     struct History hist;
     char *expr = format_expression(e);
@@ -766,7 +765,7 @@ void create_history(const char *dst, expression *e)
     if (seeded) {
         char buf[RECORD_LEN];
 
-        sprintf(buf, "random seed = %ld", seed_value);
+        snprintf(buf, sizeof(buf), "random seed = %ld", seed_value);
         Rast_append_history(&hist, buf);
     }
 

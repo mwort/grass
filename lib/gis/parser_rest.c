@@ -69,7 +69,7 @@ void G__usage_rest(void)
 
     fprintf(stdout, "\n%s\n----------------------\n", _("KEYWORDS"));
     if (st->module_info.keywords) {
-        G__print_keywords(stdout, NULL);
+        G__print_keywords(stdout, NULL, FALSE);
         fprintf(stdout, "\n");
     }
     fprintf(stdout, "\n%s\n----------------------\n", _("SYNOPSIS"));

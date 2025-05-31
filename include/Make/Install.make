@@ -122,7 +122,7 @@ $(DESTDIR)$(INST_DIR) $(DESTDIR)$(UNIX_BIN):
 	$(MAKE_DIR_CMD) $@
 
 $(STARTUP): $(ARCH_DISTDIR)/$(GRASS_NAME).tmp
-	sed -e 's#'@GISBASE@'#'$(INST_DIR)'#g' \
+	sed -e 's#'@GISBASE_INSTALL_PATH@'#'$(INST_DIR)'#g' \
 	    -e 's#'@LD_LIBRARY_PATH_VAR@'#'$(LD_LIBRARY_PATH_VAR)'#g' \
 	    -e 's#'@CONFIG_PROJSHARE@'#'$(PROJSHARE)'#g' \
 	    $< > $@
@@ -212,6 +212,7 @@ srclibsdist: distclean
 	-cp -rL utils ./grass-lib-$(GRASS_VERSION_NUMBER)
 	-cp -rL demolocation ./grass-lib-$(GRASS_VERSION_NUMBER)
 	-cp -rL include ./grass-lib-$(GRASS_VERSION_NUMBER)
+	-cp -rL --parents lib/external/parson ./grass-lib-$(GRASS_VERSION_NUMBER)
 	-cp -rL --parents lib/external/shapelib ./grass-lib-$(GRASS_VERSION_NUMBER)
 	-cp -rL --parents lib/external/bwidget ./grass-lib-$(GRASS_VERSION_NUMBER)
 	-cp -rL --parents lib/datetime ./grass-lib-$(GRASS_VERSION_NUMBER)

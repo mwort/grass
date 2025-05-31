@@ -102,7 +102,7 @@ label_t *labels_init(struct params *p, int *n_labels)
     buffer = atof(p->isize->answer);
 
     /* use 1 point = 1 map unit */
-    if (FT_Set_Char_Size(face, (int)((font_size)*64.0), 0, 100, 100))
+    if (FT_Set_Char_Size(face, (int)((font_size) * 64.0), 0, 100, 100))
         G_fatal_error(_("Unable to set font size"));
 
     /* start reading the map */
@@ -149,8 +149,8 @@ label_t *labels_init(struct params *p, int *n_labels)
 
         sql = (char *)G_malloc(sql_len);
         /* Read label from database */
-        sprintf(sql, "select %s from %s where %s = %d", p->column->answer,
-                fi->table, fi->key, cat);
+        snprintf(sql, sql_len, "select %s from %s where %s = %d",
+                 p->column->answer, fi->table, fi->key, cat);
         G_debug(3, "SQL: %s", sql);
         db_init_string(&query);
         db_set_string(&query, sql);

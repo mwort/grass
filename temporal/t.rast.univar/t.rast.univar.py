@@ -59,6 +59,15 @@
 # % guisection: Selection
 # %end
 
+# %option
+# % key: region_relation
+# % description: Process only maps with this spatial relation to the current computational region
+# % guisection: Selection
+# % options: overlaps,contains,is_contained
+# % required: no
+# % multiple: no
+# %end
+
 # %option G_OPT_F_SEP
 # % label: Field separator character between the output columns
 # % guisection: Formatting
@@ -71,7 +80,7 @@
 
 # %flag
 # % key: r
-# % description: Ignore the current region settings and use the raster map regions for univar statistical calculation
+# % description: Use the raster map regions for univar statistical calculation instead of the current region
 # %end
 
 # %flag
@@ -82,7 +91,6 @@
 
 # %rules
 # % requires: percentile,-e
-# % exclusive: zones,-r
 # %end
 
 import grass.script as gs
@@ -103,6 +111,7 @@ def main():
     output = options["output"]
     nprocs = int(options["nprocs"])
     where = options["where"]
+    region_relation = options["region_relation"]
     extended = flags["e"]
     no_header = flags["u"]
     rast_region = bool(flags["r"])
@@ -120,9 +129,7 @@ def main():
     # Make sure the temporal database exists
     tgis.init()
 
-    if not output:
-        output = None
-    if output == "-":
+    if not output or output == "-":
         output = None
 
     # Check if zones map exists and is of type CELL
@@ -136,11 +143,12 @@ def main():
         output,
         where,
         extended,
+        percentile=percentile,
         no_header=no_header,
         fs=separator,
-        rast_region=rast_region,
         zones=zones,
-        percentile=percentile,
+        rast_region=rast_region,
+        region_relation=region_relation,
         nprocs=nprocs,
     )
 

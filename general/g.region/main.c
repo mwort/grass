@@ -14,12 +14,14 @@
  ****************************************************************************/
 
 #include <string.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <math.h>
 #include <grass/gis.h>
 #include <grass/raster.h>
 #include <grass/raster3d.h>
 #include <grass/vector.h>
+#include <grass/parson.h>
 #include <grass/glocale.h>
 #include "local_proto.h"
 
@@ -41,6 +43,9 @@ int main(int argc, char *argv[])
     char **rast_ptr, **vect_ptr;
     int pix;
     bool update_file = false;
+    enum OutputFormat format;
+    JSON_Value *root_value;
+    JSON_Object *root_object;
 
     struct GModule *module;
     struct {
@@ -51,7 +56,7 @@ int main(int argc, char *argv[])
     struct {
         struct Option *north, *south, *east, *west, *top, *bottom, *res, *nsres,
             *ewres, *res3, *tbres, *rows, *cols, *save, *region, *raster,
-            *raster3d, *align, *zoom, *vect, *grow;
+            *raster3d, *align, *zoom, *vect, *grow, *format;
     } parm;
 
     G_gisinit(argv[0]);
@@ -358,6 +363,13 @@ int main(int argc, char *argv[])
     parm.save->gisprompt = "new,windows,region";
     parm.save->guisection = _("Effects");
 
+    parm.format = G_define_standard_option(G_OPT_F_FORMAT);
+    parm.format->options = "plain,shell,json";
+    parm.format->descriptions = _("plain;Plain text output;"
+                                  "shell;shell script style output;"
+                                  "json;JSON (JavaScript Object Notation);");
+    parm.format->guisection = _("Print");
+
     G_option_required(
         flag.dflt, flag.savedefault, flag.print, flag.lprint, flag.eprint,
         flag.center, flag.gmt_style, flag.wms_style, flag.dist_res, flag.nangle,
@@ -371,6 +383,7 @@ int main(int argc, char *argv[])
                       flag.eprint, flag.center, flag.gmt_style, flag.wms_style,
                       flag.dist_res, flag.nangle, flag.z, flag.bbox,
                       flag.gprint, parm.save, NULL);
+    G_option_requires(flag.flprint, flag.gprint, NULL);
 
     if (G_parser(argc, argv))
         exit(EXIT_FAILURE);
@@ -418,6 +431,24 @@ int main(int argc, char *argv[])
     if (print_flag == PRINT_SH || print_flag & PRINT_3D ||
         print_flag == PRINT_METERS + PRINT_SH) {
         print_flag |= PRINT_REG;
+    }
+
+    if (strcmp(parm.format->answer, "json") == 0) {
+        format = JSON;
+        root_value = json_value_init_object();
+        if (root_value == NULL) {
+            G_fatal_error(
+                _("Failed to initialize JSON object. Out of memory?"));
+        }
+        root_object = json_object(root_value);
+    }
+    else if (strcmp(parm.format->answer, "shell") == 0 ||
+             (print_flag & PRINT_SH)) {
+        format = SHELL;
+        print_flag |= PRINT_SH;
+    }
+    else {
+        format = PLAIN;
     }
 
     if (flag.dflt->answer)
@@ -875,17 +906,15 @@ int main(int argc, char *argv[])
             }
         }
     }
+    G_adjust_Cell_head3(&window, row_flag, col_flag, 0);
 
     /* save= */
     if ((name = parm.save->answer)) {
         update_file = false;
-        temp_window = window;
-        G_adjust_Cell_head3(&temp_window, 0, 0, 0);
-        if (G_put_element_window(&temp_window, "windows", name) < 0)
+        if (G_put_element_window(&window, "windows", name) < 0)
             G_fatal_error(_("Unable to set region <%s>"), name);
     }
 
-    G_adjust_Cell_head3(&window, row_flag, col_flag, 0);
     if (flag.force->answer || (update_file && !flag.noupdate->answer)) {
         if (G_put_window(&window) < 0)
             G_fatal_error(_("Unable to update current region"));
@@ -902,7 +931,18 @@ int main(int argc, char *argv[])
     } /* / flag.savedefault->answer */
 
     if (print_flag)
-        print_window(&window, print_flag, flat_flag);
+        print_window(&window, print_flag, flat_flag, format, root_object);
+
+    if (format == JSON) {
+        char *serialized_string = NULL;
+        serialized_string = json_serialize_to_string_pretty(root_value);
+        if (serialized_string == NULL) {
+            G_fatal_error(_("Failed to initialize pretty JSON string."));
+        }
+        puts(serialized_string);
+        json_free_serialized_string(serialized_string);
+        json_value_free(root_value);
+    }
 
     exit(EXIT_SUCCESS);
 }

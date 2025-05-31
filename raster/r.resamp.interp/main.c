@@ -132,7 +132,10 @@ int main(int argc, char *argv[])
                     "threads setting."));
     threads = 1;
 #endif
-
+    if (threads > 1 && Rast_mask_is_present()) {
+        G_warning(_("Parallel processing disabled due to active mask."));
+        threads = 1;
+    }
     bufrows = atoi(memory->answer) * (((1 << 20) / sizeof(DCELL)) / dst_w.cols);
     /* set the output buffer rows to be at most covering the entire map */
     if (bufrows > dst_w.rows) {
@@ -453,7 +456,8 @@ int main(int argc, char *argv[])
     Rast_close(outfile);
 
     /* record map metadata/history info */
-    sprintf(title, "Resample by %s interpolation", method->answer);
+    snprintf(title, sizeof(title), "Resample by %s interpolation",
+             method->answer);
     Rast_put_cell_title(rastout->answer, title);
 
     Rast_short_history(rastout->answer, "raster", &history);
