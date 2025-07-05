@@ -1,47 +1,48 @@
 
+PROJECT_ROOT=/data/ouce-evoflood
+
+ml Anaconda3/2024.02-1
+ml Mamba/23.11.0-0
+
 cd $(realpath .)
 
-installdir=$(realpath $PROJECT_ROOT)/bin
+installdir=$(realpath $PROJECT_ROOT)/bin/conda/ef-base3
 
 git pull
 
-module purge
-
-module load \
-    zlib/1.2.11-GCCcore-10.2.0 \
-    zstd/1.4.5-GCCcore-10.2.0 \
-    bzip2/1.0.8-GCCcore-10.2.0 \
-    PROJ/7.2.1-GCCcore-10.2.0 \
-    GDAL/3.2.1-fosscuda-2020b \
-    cairo/1.16.0-GCCcore-10.2.0 \
-    GEOS/3.9.1-GCC-10.2.0 \
-    netCDF/4.7.4-iimpi-2020b
-module unload Python/3.8.6-GCCcore-10.2.0 SciPy-bundle/2020.11-fosscuda-2020b
-module -q load OpenSSL/1.1.1h-GCCcore-10.2.0
-
 # install conda environment with wxpython
-conda create -p $installdir/conda/grass-gui
-source activate $installdir/conda/grass-gui
-conda install wxpython matplotlib ipython pillow argcomplete pandas svn
+rm -rf $installdir
+mamba env create -f ../conda_environment_base.yaml -p $installdir
 
+# this is needed to work with the self-compiled grass
+cat > $installdir/etc/conda/activate.d/env_vars.sh <<EOF
+#!/bin/bash
+export LD_LIBRARY_PATH=\$CONDA_PREFIX/lib:\$LD_LIBRARY_PATH
+EOF
+chmod +x $installdir/etc/conda/activate.d/env_vars.sh
+
+conda deactivate
+conda activate $installdir
 
 make clean
 
-CFLAGS=-O2 LDFLAGS="-s" ./configure --prefix=$installdir \
+export PKG_CONFIG_PATH="$installdir/lib/pkgconfig:$PKG_CONFIG_PATH"
+export LD_LIBRARY_PATH=$installdir/lib
+CFLAGS=-O2 LDFLAGS="-L$installdir/lib -liconv" ./configure \
+    --prefix=$installdir \
+    --with-includes=$installdir/include \
+    --with-libs=$installdir/lib \
     --enable-largefile \
+    --enable-shared \
     --without-opengl \
     --with-readline \
     --with-openmp \
     --with-geos \
-    --with-netcdf
+    --with-netcdf \
+    --without-pdal \
+    --without-fftw
 
-make -j 16
-
-
-# issue in python/libgrass_interface_generator, solved by:
-#module unload zlib zstd PROJ GDAL cairo GEOS netCDF
-#make
+make -j 32
 
 # install
 make install
-
